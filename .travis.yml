@@ -1,0 +1,13 @@
+language: scala
+scala:
+  - 2.10.4
+jdk:
+  - openjdk7
+sudo: false
+before_install:
+  - curl 'https://download-codeplex.sec.s-msft.com/Download/Release?ProjectName=z3&DownloadId=975316&FileTime=130626690393100000&Build=20959' > z3.zip
+  - unzip z3.zip -d z3
+  - mv z3/* z3/4.3-unix-64b/
+script:
+  - sbt -jvm-opts travis/jvmopts.test package
+  - sbt -jvm-opts travis/jvmopts.test test
