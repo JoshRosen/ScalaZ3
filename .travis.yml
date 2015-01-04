@@ -11,7 +11,7 @@ before_install:
   # - git clone --branch=v4.3.2 --depth=1 https://git.codeplex.com/z3 z3-repo
   - cd z3-repo
   - python scripts/mk_make.py --prefix=z3-dist
-  - mkdir -p build/z3-dist/lib/python2.7/site-packages
+  - mkdir -p build/z3-dist/lib/python2.7/dist-packages
   - cd build
   - make
   - make install
