@@ -16,6 +16,7 @@ before_install:
   - make
   - make install
   - cd ../../
+  - mkdir z3
   - cp -r z3-repo/build/z3-dist z3/4.3-unix-64b/
 script:
   - sbt -jvm-opts travis/jvmopts.test package
