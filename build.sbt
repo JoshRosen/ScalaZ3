@@ -15,6 +15,7 @@ scalaVersion := "2.10.4"
 crossScalaVersions := Seq("2.10.4", "2.11.2")
 
 libraryDependencies ++= Seq(
+    "com.github.jnr" % "jnr-ffi" % "2.0.1",
     "org.scalatest" %% "scalatest" % "2.1.3" % "test"
 )
 

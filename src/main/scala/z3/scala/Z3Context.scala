@@ -1,7 +1,6 @@
 package z3.scala
 
-import dsl.Z3ASTWrapper
-import z3.{Z3Wrapper,Pointer}
+import jnr.ffi.Pointer
 import scala.collection.mutable.{Set=>MutableSet}
 import java.math.BigInteger
 
@@ -18,9 +17,9 @@ object Z3Context {
 }
 
 sealed class Z3Context(val config: Z3Config) {
-  val ptr : Long = Z3Wrapper.mkContextRC(config.ptr)
+  val ptr: Pointer = Z3Wrapper.mkContextRC(config.ptr)
 
-  Z3Wrapper.registerContext(ptr, this)
+  registerContext(ptr, this)
 
   val astQueue       = new Z3RefCountQueue[Z3ASTLike]()
   val astvectorQueue = new Z3RefCountQueue[Z3ASTVector]()
@@ -43,7 +42,7 @@ sealed class Z3Context(val config: Z3Config) {
       astvectorQueue.clearQueue()
       tacticQueue.clearQueue()
 
-      Z3Wrapper.unregisterContext(this.ptr)
+      unregisterContext(this.ptr)
 
       Z3Wrapper.delContext(this.ptr)
       deleted = true
@@ -128,7 +127,8 @@ sealed class Z3Context(val config: Z3Config) {
 
   /*
   def isArrayValue(ast: Z3AST) : Option[Int] = {
-    val numEntriesPtr = new Z3Wrapper.IntPtr()
+    val numEntriesPtr = new Z3Wrapper.
+    ()
     val result = Z3Wrapper.isArrayValue(this.ptr, ast.ptr, numEntriesPtr)
     if (result) {
       Some(numEntriesPtr.value)
@@ -143,8 +143,8 @@ sealed class Z3Context(val config: Z3Config) {
     case Some(numEntries) => {
       // val indices = (0 until numEntries).map(_ => new Z3AST((new Pointer(0L)).ptr, this)).toList
       // val values  = (0 until numEntries).map(_ => new Z3AST((new Pointer(0L)).ptr, this)).toList
-      val indArray = new Array[Long](numEntries)
-      val valArray = new Array[Long](numEntries)
+      val indArray = new Array[Pointer](numEntries)
+      val valArray = new Array[Pointer](numEntries)
       val elseValuePtr = new Pointer(0L)
 
       // println("indices before : " + indArray.toList.mkString(", "))
@@ -202,8 +202,8 @@ sealed class Z3Context(val config: Z3Config) {
 
     // the following big block builds the following three lists
     var symbolList:   List[Z3Symbol] = Nil
-    var consListList: List[Long] = Nil
-    var consScalaList: List[List[(Long,Int)]] = Nil // in the Scala list, we maintain number of fields
+    var consListList: List[Pointer] = Nil
+    var consScalaList: List[List[(Pointer,Int)]] = Nil // in the Scala list, we maintain number of fields
 
     for(tuple <- defs) yield {
       val (typeName, typeConstructorNames, typeConstructorArgs) = tuple
@@ -215,14 +215,14 @@ sealed class Z3Context(val config: Z3Config) {
       val sym: Z3Symbol = mkStringSymbol(typeName)
       symbolList = sym :: symbolList
 
-      val constructors = (for((tcn, tca) <- (typeConstructorNames zip typeConstructorArgs)) yield {
+      val constructors = for((tcn, tca) <- (typeConstructorNames zip typeConstructorArgs)) yield {
         val consSym: Z3Symbol = mkStringSymbol(tcn)
         val testSym: Z3Symbol = mkStringSymbol("is" + tcn)
-        val fieldSyms: Array[Long] = tca.map(p => mkStringSymbol(p._1).ptr).toArray
-        val fieldSorts: Array[Long] = tca.map(p => p._2 match {
+        val fieldSyms: Array[Pointer] = tca.map(p => mkStringSymbol(p._1).ptr).toArray
+        val fieldSorts: Array[Pointer] = tca.map(p => p._2 match {
           case RecursiveType(idx) if idx >= typeCount => throw new IllegalArgumentException("index of recursive type is too big (" + idx + ") for field " + p._1 + " of type " + typeName)
           case RegularSort(srt) => srt.ptr
-          case RecursiveType(_) => 0L
+          case RecursiveType(_) => runtime.getMemoryManager.newPointer(0)
         }).toArray
 
         val fieldRefs: Array[Int] = tca.map(p => p._2 match {
@@ -232,7 +232,7 @@ sealed class Z3Context(val config: Z3Config) {
 
         val consPtr = Z3Wrapper.mkConstructor(this.ptr, consSym.ptr, testSym.ptr, fieldSyms.size, fieldSyms, fieldSorts, fieldRefs)
         (consPtr, fieldSyms.size)
-      })
+      }
 
       val consArr = constructors.map(_._1).toArray
       val consList = Z3Wrapper.mkConstructorList(this.ptr, consArr.length, consArr)
@@ -244,21 +244,21 @@ sealed class Z3Context(val config: Z3Config) {
     consListList = consListList.reverse
     consScalaList = consScalaList.reverse
     
-    val newSorts: Array[Long] = Z3Wrapper.mkDatatypes(this.ptr, typeCount, toPtrArray(symbolList), consListList.toArray)
+    val newSorts: Array[Pointer] = Z3Wrapper.mkDatatypes(this.ptr, typeCount, toPtrArray(symbolList), consListList.toArray)
 
     consListList.foreach(cl => Z3Wrapper.delConstructorList(this.ptr, cl))
     
     for((sort, consLst) <- (newSorts zip consScalaList)) yield {
       val zipped = for (cons <- consLst) yield {
-        val consFunPtr = new Pointer(0L)
-        val testFunPtr = new Pointer(0L)
+        val consFunPtr = Pointer.newIntPointer(runtime, 0L)
+        val testFunPtr = runtime.getMemoryManager.newPointer(0)
 
-        val selectors: Array[Long] = if(cons._2 > 0) new Array[Long](cons._2) else null
+        val selectors: Array[Pointer] = if(cons._2 > 0) new Array[Pointer](cons._2) else null
 
         Z3Wrapper.queryConstructor(this.ptr, cons._1, cons._2, consFunPtr, testFunPtr, selectors)
 
-        val consFun = new Z3FuncDecl(consFunPtr.ptr, cons._2, this)
-        val testFun = new Z3FuncDecl(testFunPtr.ptr, 1, this)
+        val consFun = new Z3FuncDecl(consFunPtr, cons._2, this)
+        val testFun = new Z3FuncDecl(testFunPtr, 1, this)
         (consFun, (testFun, if(cons._2 > 0) selectors.map(new Z3FuncDecl(_, 1, this)).toList else Nil))
       }
 
@@ -503,12 +503,12 @@ sealed class Z3Context(val config: Z3Config) {
   def mkTupleSort(name : Z3Symbol, sorts : Z3Sort*) : (Z3Sort,Z3FuncDecl,Seq[Z3FuncDecl]) = {
     require(sorts.size > 0)
     val sz = sorts.size
-    val consPtr = new Pointer(0L)
-    val projFuns = new Array[Long](sz)
+    val consPtr = runtime.getMemoryManager.newPointer(0)
+    val projFuns = new Array[Pointer](sz)
     val fieldNames = sorts.map(s => mkFreshStringSymbol(name + "-field")).toArray
     val sortPtr = Z3Wrapper.mkTupleSort(this.ptr, name.ptr, sz, fieldNames.map(_.ptr), sorts.map(_.ptr).toArray, consPtr, projFuns)
     val newSort = new Z3Sort(sortPtr, this)
-    val consFuncDecl = new Z3FuncDecl(consPtr.ptr, sz, this)
+    val consFuncDecl = new Z3FuncDecl(consPtr, sz, this)
     val projFuncDecls = projFuns.map(ptr => new Z3FuncDecl(ptr, 1, this)).toSeq
     (newSort, consFuncDecl, projFuncDecls)
   }
@@ -912,10 +912,10 @@ sealed class Z3Context(val config: Z3Config) {
   }
 
   def getNumeralInt(ast: Z3AST) : Z3NumeralIntAST = {
-    val ip = new Z3Wrapper.IntPtr
+    val ip = Pointer.newIntPointer(runtime, 0L)
     val res = Z3Wrapper.getNumeralInt(this.ptr, ast.ptr, ip)
     if(res)
-      Z3NumeralIntAST(Some(ip.value))
+      Z3NumeralIntAST(Some(ip.address().toInt))
     else
       Z3NumeralIntAST(None)
   }

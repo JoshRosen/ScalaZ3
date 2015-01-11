@@ -1,6 +1,7 @@
 package z3.scala
 
-import z3.{Z3Wrapper,Pointer}
+import jnr.ffi.Pointer
+import jnr.ffi.provider.IntPointer
 
 object Z3Model {
   implicit def ast2int(model: Z3Model, ast: Z3AST): Option[Int] = {
@@ -32,7 +33,7 @@ object Z3Model {
   }
 }
 
-sealed class Z3Model private[z3](val ptr: Long, val context: Z3Context) extends Z3Object {
+sealed class Z3Model private[z3](val ptr: Pointer, val context: Z3Context) extends Z3Object {
   override def toString : String = context.modelToString(this)
 
   @deprecated("Z3Model.delete() not be used, use incref/decref instead", "")
@@ -48,13 +49,13 @@ sealed class Z3Model private[z3](val ptr: Long, val context: Z3Context) extends 
   }
 
   def eval(ast: Z3AST, completion: Boolean = false) : Option[Z3AST] = {
-    if(this.ptr == 0L) {
+    if (this.ptr.address() == 0L) {
       throw new IllegalStateException("The model is not initialized.")
     }
-    val out = new Pointer(0L)
+    val out = runtime.getMemoryManager.newPointer(0)
     val result = Z3Wrapper.modelEval(context.ptr, this.ptr, ast.ptr, out, completion)
     if (result) {
-      Some(new Z3AST(out.ptr, context))
+      Some(new Z3AST(out, context))
     } else {
       None
     }
@@ -130,10 +131,10 @@ sealed class Z3Model private[z3](val ptr: Long, val context: Z3Context) extends 
     getModelFuncInterpretations.map(i => (i._1, (i._2, i._3))).toMap
 
   def isArrayValue(ast: Z3AST) : Option[Int] = {
-    val numEntriesPtr = new Z3Wrapper.IntPtr()
+    val numEntriesPtr = new IntPointer(runtime, 0)
     val result = Z3Wrapper.isArrayValue(context.ptr, this.ptr, ast.ptr, numEntriesPtr)
     if (result) {
-      Some(numEntriesPtr.value)
+      Some(numEntriesPtr.address().toInt)
     } else {
       None
     }
@@ -142,13 +143,13 @@ sealed class Z3Model private[z3](val ptr: Long, val context: Z3Context) extends 
   def getArrayValue(ast: Z3AST) : Option[(Map[Z3AST, Z3AST], Z3AST)] = isArrayValue(ast) match {
     case None => None
     case Some(numEntries) =>
-      val indArray = new Array[Long](numEntries)
-      val valArray = new Array[Long](numEntries)
-      val elseValuePtr = new Pointer(0L)
+      val indArray = new Array[Pointer](numEntries)
+      val valArray = new Array[Pointer](numEntries)
+      val elseValuePtr = Pointer.newIntPointer(runtime, 0L)
 
       Z3Wrapper.getArrayValue(context.ptr, this.ptr, ast.ptr, numEntries, indArray, valArray, elseValuePtr)
 
-      val elseValue = new Z3AST(elseValuePtr.ptr, context)
+      val elseValue = new Z3AST(elseValuePtr, context)
       val map = Map((indArray.map(new Z3AST(_, context)) zip valArray.map(new Z3AST(_, context))): _*)
       Some((map, elseValue))
   }

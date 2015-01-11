@@ -1,9 +1,9 @@
 package z3.scala
 
-import z3.{Z3Wrapper,Pointer}
+import jnr.ffi.Pointer
 
 sealed class Z3Config(params: (String,Any)*) {
-  val ptr : Long = Z3Wrapper.mkConfig()
+  val ptr: Pointer = Z3Wrapper.Z3_mk_config()
 
   for((k,v) <- params) {
     Z3Wrapper.setParamValue(this.ptr, k, v.toString)

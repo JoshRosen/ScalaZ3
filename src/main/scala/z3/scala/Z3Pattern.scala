@@ -1,8 +1,8 @@
 package z3.scala
 
-import z3.Pointer
+import jnr.ffi.Pointer
 
-sealed class Z3Pattern private[z3](val ptr: Long, val context: Z3Context) extends Z3ASTLike {
+sealed class Z3Pattern private[z3](val ptr: Pointer, val context: Z3Context) extends Z3ASTLike {
   override def toString : String = context.patternToString(this)
 
   locally {

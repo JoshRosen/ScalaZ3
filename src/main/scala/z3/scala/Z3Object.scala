@@ -1,9 +1,9 @@
 package z3.scala
 
-import z3.Z3Wrapper
+import jnr.ffi.Pointer
 
 trait Z3Object extends Z3Pointer {
-  val ptr: Long
+  val ptr: Pointer
   val context: Z3Context
 
   protected[z3] def incRef()

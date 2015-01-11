@@ -1,8 +1,5 @@
 package z3.scala
 
-import z3.Pointer
-import z3.Z3Wrapper
-
 import scala.collection.mutable.{Map=>MutableMap,Set=>MutableSet}
 import scala.util.Random.nextInt
 

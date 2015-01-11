@@ -1,8 +1,9 @@
 package z3.scala
 
-import z3.Pointer
+import jnr.ffi.Pointer
 
-sealed class Z3AST private[z3](val ptr : Long, val context : Z3Context) extends Z3ASTLike {
+
+sealed class Z3AST private[z3](val ptr : Pointer, val context : Z3Context) extends Z3ASTLike {
   override def equals(that : Any) : Boolean = {
     that != null &&
     that.isInstanceOf[Z3AST] && {

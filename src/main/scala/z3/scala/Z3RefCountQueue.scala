@@ -1,7 +1,5 @@
 package z3.scala
 
-import z3.{Z3Wrapper,Pointer}
-
 class Z3RefCountQueue[T <: Z3Object](maxSize: Int = 512) {
   private val drQueue = collection.mutable.Queue[T]()
 

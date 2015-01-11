@@ -1,7 +1,6 @@
 package z3.scala
 
-import z3.Pointer
-import z3.Z3Wrapper
+import jnr.ffi.Pointer
 
 /** This class is inherited to create user defined theories.
  * <p>
@@ -14,7 +13,7 @@ import z3.Z3Wrapper
  * useful. */
 abstract class Z3Theory(context: Z3Context, val name: String) {
   // This will immediately set the pointer.
-  val ptr : Long = Z3Wrapper.mkTheory(context.ptr, name)
+  val ptr : Pointer = Z3Wrapper.mkTheory(context.ptr, name)
   private val proxy = new TheoryProxy(context, this)
 
   /** Use this function at construction time to set which callbacks should be used. */
@@ -179,8 +178,8 @@ abstract class Z3Theory(context: Z3Context, val name: String) {
   final def getEqClassMembers(ast: Z3AST) : Iterator[Z3AST] = {
     val theory = this
     new Iterator[Z3AST] {
-      val root: Long = Z3Wrapper.theoryGetEqCRoot(theory.ptr, ast.ptr)
-      var nxt: Long = Z3Wrapper.theoryGetEqCNext(theory.ptr, root)
+      val root: Pointer = Z3Wrapper.theoryGetEqCRoot(theory.ptr, ast.ptr)
+      var nxt: Pointer = Z3Wrapper.theoryGetEqCNext(theory.ptr, root)
       var calledOnce = false
 
       override def hasNext : Boolean = (!calledOnce || nxt != root)
