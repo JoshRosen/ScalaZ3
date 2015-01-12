@@ -17,7 +17,7 @@ extern "C" {
         return;
     }
 
-    JNIEXPORT void JNICALL Java_z3_Z3Wrapper_openLog(JNIEnv * env, jclass cls, jstring name) {
+    JNIEXPORT void JNICALL Java_z3_Z3Wrapper.Z3_open_log(JNIEnv * env, jclass cls, jstring name) {
         const char* name_str;
         name_str = (*env)->GetStringUTFChars(env, name, NULL);
         if (name_str == NULL) return;
@@ -25,7 +25,7 @@ extern "C" {
         Z3_open_log((const char*)name_str);
     }
 
-    JNIEXPORT void JNICALL Java_z3_Z3Wrapper_setParamValue(JNIEnv * env, jclass cls, jlong configPtr, jstring paramID, jstring paramValue) {
+    JNIEXPORT void JNICALL Java_z3_Z3Wrapper.Z3_set_param_value(JNIEnv * env, jclass cls, jlong configPtr, jstring paramID, jstring paramValue) {
         const char* str1;
         const char* str2;
         str1 = (*env)->GetStringUTFChars(env, paramID, NULL);
@@ -97,7 +97,7 @@ extern "C" {
         Z3_toggle_warning_messages((Z3_bool)enabled);
     }
 
-    JNIEXPORT void JNICALL Java_z3_Z3Wrapper_updateParamValue(JNIEnv * env, jclass cls, jlong configPtr, jstring paramID, jstring paramValue) {
+    JNIEXPORT void JNICALL Java_z3_Z3Wrapper.Z3_update_param_value(JNIEnv * env, jclass cls, jlong configPtr, jstring paramID, jstring paramValue) {
         const char* str1;
         const char* str2;
         str1 = (*env)->GetStringUTFChars(env, paramID, NULL);
@@ -983,7 +983,7 @@ JNIEXPORT jlong JNICALL Java_z3_Z3Wrapper_mkBVMulNoUnderflow (JNIEnv * env, jcla
         return (*env)->NewStringUTF(env, str);
     }
 
-    JNIEXPORT jint JNICALL Java_z3_Z3Wrapper_getASTKind(JNIEnv * env, jclass cls, jlong contextPtr, jlong astPtr) {
+    JNIEXPORT jint JNICALL Java_z3_Z3Wrapper.Z3_get_astkind(JNIEnv * env, jclass cls, jlong contextPtr, jlong astPtr) {
         Z3_ast_kind k = Z3_get_ast_kind(asZ3Context(contextPtr), asZ3AST(astPtr));
         switch (k) {
             case Z3_NUMERAL_AST:    return (jint)0;
@@ -995,7 +995,7 @@ JNIEXPORT jlong JNICALL Java_z3_Z3Wrapper_mkBVMulNoUnderflow (JNIEnv * env, jcla
         }
     }
 
-    JNIEXPORT jint JNICALL Java_z3_Z3Wrapper_getDeclKind(JNIEnv * env, jclass cls, jlong contextPtr, jlong funcDeclPtr) {
+    JNIEXPORT jint JNICALL Java_z3_Z3Wrapper.Z3_get_decl_kind(JNIEnv * env, jclass cls, jlong contextPtr, jlong funcDeclPtr) {
         Z3_decl_kind k = Z3_get_decl_kind(asZ3Context(contextPtr), asZ3FuncDecl(funcDeclPtr));
 
         switch (k) {
@@ -1090,20 +1090,20 @@ JNIEXPORT jlong JNICALL Java_z3_Z3Wrapper_mkBVMulNoUnderflow (JNIEnv * env, jcla
         return (result == 0 ? JNI_FALSE : JNI_TRUE);
     }
 
-    JNIEXPORT jstring JNICALL Java_z3_Z3Wrapper_getNumeralString(JNIEnv * env, jclass cls, jlong contextPtr, jlong astPtr) {
+    JNIEXPORT jstring JNICALL Java_z3_Z3Wrapper.Z3_get_numeral_string(JNIEnv * env, jclass cls, jlong contextPtr, jlong astPtr) {
         const char * str = (const char *)Z3_get_numeral_string(asZ3Context(contextPtr), asZ3AST(astPtr));
         return (*env)->NewStringUTF(env, str);
     }
 
-    JNIEXPORT jlong JNICALL Java_z3_Z3Wrapper_getNumerator(JNIEnv * env, jclass cls, jlong contextPtr, jlong astPtr) {
+    JNIEXPORT jlong JNICALL Java_z3_Z3Wrapper.Z3_get_numerator(JNIEnv * env, jclass cls, jlong contextPtr, jlong astPtr) {
         return astToJLong(Z3_get_numerator(asZ3Context(contextPtr), asZ3AST(astPtr)));
     }
 
-    JNIEXPORT jlong JNICALL Java_z3_Z3Wrapper_getDenominator(JNIEnv * env, jclass cls, jlong contextPtr, jlong astPtr) {
+    JNIEXPORT jlong JNICALL Java_z3_Z3Wrapper.Z3_get_denominator(JNIEnv * env, jclass cls, jlong contextPtr, jlong astPtr) {
         return astToJLong(Z3_get_denominator(asZ3Context(contextPtr), asZ3AST(astPtr)));
     }
 
-    JNIEXPORT jboolean JNICALL Java_z3_Z3Wrapper_isAlgebraicNumber(JNIEnv * env, jclass cls, jlong contextPtr, jlong astPtr) {
+    JNIEXPORT jboolean JNICALL Java_z3_Z3Wrapper.Z3_is_algebraic_number(JNIEnv * env, jclass cls, jlong contextPtr, jlong astPtr) {
         Z3_bool result = Z3_is_algebraic_number(asZ3Context(contextPtr), asZ3AST(astPtr));
         return (result == 0 ? JNI_FALSE : JNI_TRUE);
     }
@@ -1682,7 +1682,7 @@ JNIEXPORT jlong JNICALL Java_z3_Z3Wrapper_mkBVMulNoUnderflow (JNIEnv * env, jcla
           return res;
     }
 
-    JNIEXPORT void JNICALL Java_z3_Z3Wrapper_setAstPrintMode(JNIEnv * env, jclass cls, jlong contextPtr, jint mode)
+    JNIEXPORT void JNICALL Java_z3_Z3Wrapper.Z3_set_ast_print_mode(JNIEnv * env, jclass cls, jlong contextPtr, jint mode)
     {
         Z3_context ctx = asZ3Context(contextPtr);
         Z3_ast_print_mode modeCast = (Z3_ast_print_mode)mode;

@@ -12,32 +12,32 @@ class Z3Solver private[z3](val ptr : Pointer, val context : Z3Context) extends Z
   }
 
   def pop(numScopes : Int = 1) = {
-    Z3Wrapper.solverPop(context.ptr, this.ptr, numScopes)
+    Z3Wrapper.Z3_solver_pop(context.ptr, this.ptr, numScopes)
   }
 
   def push() = {
-    Z3Wrapper.solverPush(context.ptr, this.ptr)
+    Z3Wrapper.Z3_solver_push(context.ptr, this.ptr)
   }
 
   var isModelAvailable = false
 
   def assertCnstr(ast: Z3AST) = {
-    Z3Wrapper.solverAssertCnstr(context.ptr, this.ptr, ast.ptr)
+    Z3Wrapper.Z3_solver_assert(context.ptr, this.ptr, ast.ptr)
   }
 
   def check() : Option[Boolean] = {
-    val res = i2ob(Z3Wrapper.solverCheck(context.ptr, this.ptr))
+    val res = i2ob(Z3Wrapper.Z3_solver_check(context.ptr, this.ptr))
     isModelAvailable = res != Some(false)
     res
   }
 
   def getAssertions(): Z3ASTVector = {
-    new Z3ASTVector(Z3Wrapper.solverGetAssertions(context.ptr, this.ptr), context)
+    new Z3ASTVector(Z3Wrapper.Z3_solver_get_assertions(context.ptr, this.ptr), context)
   }
 
   def getModel() : Z3Model = {
     if (isModelAvailable) {
-      new Z3Model(Z3Wrapper.solverGetModel(context.ptr, this.ptr), context)
+      new Z3Model(Z3Wrapper.Z3_solver_get_model(context.ptr, this.ptr), context)
     } else {
       throw new Exception("Cannot get model if check failed")
     }
@@ -45,35 +45,35 @@ class Z3Solver private[z3](val ptr : Pointer, val context : Z3Context) extends Z
 
   def getProof() : Z3AST = {
     if (!isModelAvailable) {
-      new Z3AST(Z3Wrapper.solverGetProof(context.ptr, this.ptr), context)
+      new Z3AST(Z3Wrapper.Z3_solver_get_proof(context.ptr, this.ptr), context)
     } else {
       throw new Exception("Cannot get proof if formula is SAT")
     }
   }
 
   def getUnsatCore() : Z3ASTVector = {
-    new Z3ASTVector(Z3Wrapper.solverGetUnsatCore(context.ptr, this.ptr), context)
+    new Z3ASTVector(Z3Wrapper.Z3_solver_get_unsat_core(context.ptr, this.ptr), context)
   }
 
   def reset() = {
-    Z3Wrapper.solverReset(context.ptr, this.ptr)
+    Z3Wrapper.Z3_solver_reset(context.ptr, this.ptr)
   }
 
   def getNumScopes() = {
-    Z3Wrapper.solverGetNumScopes(context.ptr, this.ptr)  
+    Z3Wrapper.Z3_solver_get_num_scopes(context.ptr, this.ptr)  
   }
 
   def incRef() {
-    Z3Wrapper.solverIncRef(context.ptr, this.ptr)
+    Z3Wrapper.Z3_solver_inc_ref(context.ptr, this.ptr)
   }
 
   def decRef() {
-    Z3Wrapper.solverDecRef(context.ptr, this.ptr)
+    Z3Wrapper.Z3_solver_dec_ref(context.ptr, this.ptr)
   }
 
   def checkAssumptions(assumptions: Z3AST*) : Option[Boolean] = {
     val res = i2ob(
-      Z3Wrapper.solverCheckAssumptions(
+      Z3Wrapper.Z3_solver_check_assumptions(
         context.ptr,
         this.ptr,
         assumptions.size,
@@ -212,11 +212,11 @@ class Z3Solver private[z3](val ptr : Pointer, val context : Z3Context) extends Z
   }
 
   def getReasonUnknown() : String = {
-    Z3Wrapper.solverGetReasonUnknown(context.ptr, this.ptr)
+    Z3Wrapper.Z3_solver_get_reason_unknown(context.ptr, this.ptr)
   }
 
   override def toString() : String = {
-    Z3Wrapper.solverToString(context.ptr, this.ptr)
+    Z3Wrapper.Z3_solver_to_string(context.ptr, this.ptr)
   }
 
   locally {

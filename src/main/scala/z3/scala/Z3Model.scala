@@ -1,7 +1,7 @@
 package z3.scala
 
 import jnr.ffi.Pointer
-import jnr.ffi.provider.IntPointer
+import jnr.ffi.byref.{IntByReference, PointerByReference}
 
 object Z3Model {
   implicit def ast2int(model: Z3Model, ast: Z3AST): Option[Int] = {
@@ -41,21 +41,21 @@ sealed class Z3Model private[z3](val ptr: Pointer, val context: Z3Context) exten
   }
 
   def incRef() {
-    Z3Wrapper.modelIncRef(context.ptr, this.ptr)
+    Z3Wrapper.Z3_model_inc_ref(context.ptr, this.ptr)
   }
 
   def decRef() {
-    Z3Wrapper.modelDecRef(context.ptr, this.ptr)
+    Z3Wrapper.Z3_model_dec_ref(context.ptr, this.ptr)
   }
 
   def eval(ast: Z3AST, completion: Boolean = false) : Option[Z3AST] = {
     if (this.ptr.address() == 0L) {
       throw new IllegalStateException("The model is not initialized.")
     }
-    val out = runtime.getMemoryManager.newPointer(0)
-    val result = Z3Wrapper.modelEval(context.ptr, this.ptr, ast.ptr, out, completion)
+    val newAstPtr = new PointerByReference()
+    val result = Z3Wrapper.Z3_model_eval(context.ptr, this.ptr, ast.ptr, completion, newAstPtr)
     if (result) {
-      Some(new Z3AST(out, context))
+      Some(new Z3AST(newAstPtr.getValue, context))
     } else {
       None
     }
@@ -68,12 +68,12 @@ sealed class Z3Model private[z3](val ptr: Pointer, val context: Z3Context) exten
   def getModelConstants: Iterator[Z3FuncDecl] = {
     val model = this
     new Iterator[Z3FuncDecl] {
-      val total: Int = Z3Wrapper.getModelNumConstants(context.ptr, model.ptr)
+      val total: Int = Z3Wrapper.Z3_get_model_num_constants(context.ptr, model.ptr)
       var returned: Int = 0
 
       override def hasNext: Boolean = (returned < total)
       override def next(): Z3FuncDecl = {
-        val toReturn = new Z3FuncDecl(Z3Wrapper.getModelConstant(context.ptr, model.ptr, returned), 0, context)
+        val toReturn = new Z3FuncDecl(Z3Wrapper.Z3_get_model_constant(context.ptr, model.ptr, returned), 0, context)
         returned += 1
         toReturn
       }
@@ -104,23 +104,23 @@ sealed class Z3Model private[z3](val ptr: Pointer, val context: Z3Context) exten
   def getModelFuncInterpretations : Iterator[(Z3FuncDecl, Seq[(Seq[Z3AST], Z3AST)], Z3AST)] = {
     val model = this
     new Iterator[(Z3FuncDecl, List[(List[Z3AST], Z3AST)], Z3AST)] {
-      val total: Int = Z3Wrapper.getModelNumFuncs(context.ptr, model.ptr)
+      val total: Int = Z3Wrapper.Z3_get_model_num_funcs(context.ptr, model.ptr)
       var returned: Int = 0
 
       override def hasNext: Boolean = (returned < total)
       override def next(): (Z3FuncDecl, List[(List[Z3AST], Z3AST)], Z3AST) = {
-        val declPtr = Z3Wrapper.getModelFuncDecl(context.ptr, model.ptr, returned)
-        val arity = Z3Wrapper.getDomainSize(context.ptr, declPtr)
+        val declPtr = Z3Wrapper.Z3_get_model_func_decl(context.ptr, model.ptr, returned)
+        val arity = Z3Wrapper.Z3_get_domain_size(context.ptr, declPtr)
         val funcDecl = new Z3FuncDecl(declPtr, arity, context)
-        val numEntries = Z3Wrapper.getModelFuncNumEntries(context.ptr, model.ptr, returned)
+        val numEntries = Z3Wrapper.Z3_get_model_func_num_entries(context.ptr, model.ptr, returned)
         val entries = for (entryIndex <- 0 until numEntries) yield {
-          val numArgs = Z3Wrapper.getModelFuncEntryNumArgs(context.ptr, model.ptr, returned, entryIndex)
+          val numArgs = Z3Wrapper.Z3_get_model_func_entry_num_args(context.ptr, model.ptr, returned, entryIndex)
           val arguments = for (argIndex <- 0 until numArgs) yield {
-            new Z3AST(Z3Wrapper.getModelFuncEntryArg(context.ptr, model.ptr, returned, entryIndex, argIndex), context)
+            new Z3AST(Z3Wrapper.Z3_get_model_func_entry_arg(context.ptr, model.ptr, returned, entryIndex, argIndex), context)
           }
-          (arguments.toList, new Z3AST(Z3Wrapper.getModelFuncEntryValue(context.ptr, model.ptr, returned, entryIndex), context))
+          (arguments.toList, new Z3AST(Z3Wrapper.Z3_get_model_func_entry_value(context.ptr, model.ptr, returned, entryIndex), context))
         }
-        val elseValue = new Z3AST(Z3Wrapper.getModelFuncElse(context.ptr, model.ptr, returned), context)
+        val elseValue = new Z3AST(Z3Wrapper.Z3_get_model_func_else(context.ptr, model.ptr, returned), context)
         returned += 1
         (funcDecl, entries.toList, elseValue)
       }
@@ -131,10 +131,10 @@ sealed class Z3Model private[z3](val ptr: Pointer, val context: Z3Context) exten
     getModelFuncInterpretations.map(i => (i._1, (i._2, i._3))).toMap
 
   def isArrayValue(ast: Z3AST) : Option[Int] = {
-    val numEntriesPtr = new IntPointer(runtime, 0)
-    val result = Z3Wrapper.isArrayValue(context.ptr, this.ptr, ast.ptr, numEntriesPtr)
+    val numEntriesPtr = new IntByReference()
+    val result = Z3Wrapper.Z3_is_array_value(context.ptr, this.ptr, ast.ptr, numEntriesPtr)
     if (result) {
-      Some(numEntriesPtr.address().toInt)
+      Some(numEntriesPtr.getValue)
     } else {
       None
     }
@@ -145,9 +145,9 @@ sealed class Z3Model private[z3](val ptr: Pointer, val context: Z3Context) exten
     case Some(numEntries) =>
       val indArray = new Array[Pointer](numEntries)
       val valArray = new Array[Pointer](numEntries)
-      val elseValuePtr = Pointer.newIntPointer(runtime, 0L)
+      val elseValuePtr = runtime.getMemoryManager.allocate(4)
 
-      Z3Wrapper.getArrayValue(context.ptr, this.ptr, ast.ptr, numEntries, indArray, valArray, elseValuePtr)
+      Z3Wrapper.Z3_get_array_value(context.ptr, this.ptr, ast.ptr, numEntries, indArray, valArray, elseValuePtr)
 
       val elseValue = new Z3AST(elseValuePtr, context)
       val map = Map((indArray.map(new Z3AST(_, context)) zip valArray.map(new Z3AST(_, context))): _*)

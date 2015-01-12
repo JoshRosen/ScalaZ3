@@ -1,7 +1,7 @@
 package z3
 
-import jnr.ffi.{Memory, LibraryLoader, Pointer}
-import jnr.ffi.provider.IntPointer
+import jnr.ffi.byref.IntByReference
+import jnr.ffi.{LibraryLoader, Pointer}
 
 import _root_.scala.collection.mutable
 import _root_.scala.language.implicitConversions
@@ -16,11 +16,11 @@ package object scala {
   val runtime = jnr.ffi.Runtime.getRuntime(Z3Wrapper)
 
   def toggleWarningMessages(enabled: Boolean) : Unit = {
-    Z3Wrapper.toggleWarningMessages(enabled)
+    Z3Wrapper.Z3_toggle_warning_messages(enabled)
   }
 
   def resetMemory : Unit = {
-    Z3Wrapper.resetMemory()
+    Z3Wrapper.Z3_reset_memory()
   }
 
   private[z3] def ptrToCtx = new mutable.HashMap[Pointer, WeakReference[Z3Context]]()
@@ -39,16 +39,12 @@ package object scala {
 
   /** A string representation of the version numbers for Z3, and the API (including bindings) */
   lazy val version : String = {
-    val major: IntPointer = new IntPointer(runtime, 0)
-    val minor: IntPointer = new IntPointer(runtime, 0)
-    val buildNumber: IntPointer = new IntPointer(runtime, 0)
-    val revisionNumber: IntPointer = new IntPointer(runtime, 0)
-    Z3Wrapper.getVersion(major, minor, buildNumber, revisionNumber)
-    val string = s"Z3 ${major.address}.${minor.address} (build ${buildNumber.address}, rev. ${revisionNumber.address})"
-    string
-    //Z3Wrapper.z3VersionString() + ", " + Z3Wrapper.wrapperVersionString()
-    // TODO(josh): deallocate memory
-    // TODO(josh): wrapper version?
+    val major = new IntByReference()
+    val minor = new IntByReference()
+    val buildNumber = new IntByReference()
+    val revisionNumber = new IntByReference()
+    Z3Wrapper.Z3_get_version(major, minor, buildNumber, revisionNumber)
+    s"Z3 ${major.getValue}.${minor.getValue} (build ${buildNumber.getValue}, rev. ${revisionNumber.getValue})"
   }
 
   protected[z3] def toPtrArray(ptrs : Iterable[Z3Pointer]) : Array[Pointer] = {

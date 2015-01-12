@@ -5,23 +5,23 @@ import jnr.ffi.Pointer
 final class Z3ASTVector private[z3](val ptr : Pointer, val context : Z3Context) extends Z3Object {
 
   def incRef() {
-    Z3Wrapper.astvectorIncRef(context.ptr, this.ptr)
+    Z3Wrapper.Z3_ast_vector_inc_ref(context.ptr, this.ptr)
   }
 
   def decRef() {
-    Z3Wrapper.astvectorDecRef(context.ptr, this.ptr)
+    Z3Wrapper.Z3_ast_vector_dec_ref(context.ptr, this.ptr)
   }
 
   def get(i: Int): Z3AST = {
-    new Z3AST(Z3Wrapper.astvectorGet(context.ptr, this.ptr, i), context)
+    new Z3AST(Z3Wrapper.Z3_ast_vector_get(context.ptr, this.ptr, i), context)
   }
 
   def set(i: Int, v: Z3AST) {
-    Z3Wrapper.astvectorSet(context.ptr, this.ptr, i, v.ptr)
+    Z3Wrapper.Z3_ast_vector_set(context.ptr, this.ptr, i, v.ptr)
   }
 
   def size: Int = {
-    Z3Wrapper.astvectorSize(context.ptr, this.ptr)
+    Z3Wrapper.Z3_ast_vector_size(context.ptr, this.ptr)
   }
 
   // Utility functions

@@ -38,7 +38,7 @@ sealed class TheoryProxy private[z3](context: Z3Context, thy: Z3Theory) extends 
     } 
   }
   def reduceApp(tPtr: Pointer, fdPtr: Pointer, argc: Int, args: Array[Pointer], out: Pointer) : Boolean = {
-    val fd = new Z3FuncDecl(fdPtr, Z3Wrapper.getDomainSize(context.ptr, fdPtr), context);
+    val fd = new Z3FuncDecl(fdPtr, Z3Wrapper.Z3_get_domain_size(context.ptr, fdPtr), context);
     val aa = args.map(new Z3AST(_, context)) 
     msg("reduceApp", (fd +: aa) : _*)
     thy.reduceApp(fd, aa : _*) match {

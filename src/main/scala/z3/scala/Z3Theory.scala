@@ -13,7 +13,7 @@ import jnr.ffi.Pointer
  * useful. */
 abstract class Z3Theory(context: Z3Context, val name: String) {
   // This will immediately set the pointer.
-  val ptr : Pointer = Z3Wrapper.mkTheory(context.ptr, name)
+  val ptr : Pointer = Z3Wrapper.Z3_mk_theory(context.ptr, name)
   private val proxy = new TheoryProxy(context, this)
 
   /** Use this function at construction time to set which callbacks should be used. */
@@ -34,7 +34,7 @@ abstract class Z3Theory(context: Z3Context, val name: String) {
     newDiseq: Boolean = false,
     newAssignment: Boolean = false,
     newRelevant: Boolean = false) : Unit = {
-    Z3Wrapper.setTheoryCallbacks(this.ptr, proxy, delete, reduceEq, reduceApp, reduceDistinct, newApp, newElem, initSearch, push, pop, restart, reset, finalCheck, newEq, newDiseq, newAssignment, newRelevant)
+    Z3Wrapper.Z3_set_theory_callbacks(this.ptr, proxy, delete, reduceEq, reduceApp, reduceDistinct, newApp, newElem, initSearch, push, pop, restart, reset, finalCheck, newEq, newDiseq, newAssignment, newRelevant)
   } 
 
   /** Displays all callbacks, with their arguments. Off by default.
@@ -147,10 +147,10 @@ abstract class Z3Theory(context: Z3Context, val name: String) {
   }
 
   // The following is to be used at initialization time.
-  final def mkTheorySort(symbol: Z3Symbol) : Z3Sort = new Z3Sort(Z3Wrapper.theoryMkSort(context.ptr, this.ptr, symbol.ptr), context)
-  final def mkTheoryValue(symbol: Z3Symbol, sort: Z3Sort) : Z3AST = new Z3AST(Z3Wrapper.theoryMkValue(context.ptr, this.ptr, symbol.ptr, sort.ptr), context)
-  final def mkTheoryConstant(symbol: Z3Symbol, sort: Z3Sort) : Z3AST = new Z3AST(Z3Wrapper.theoryMkConstant(context.ptr, this.ptr, symbol.ptr, sort.ptr), context)
-  final def mkTheoryFuncDecl(symbol: Z3Symbol, domainSorts: Seq[Z3Sort], rangeSort: Z3Sort) : Z3FuncDecl = new Z3FuncDecl(Z3Wrapper.theoryMkFuncDecl(context.ptr, this.ptr, symbol.ptr, domainSorts.size, toPtrArray(domainSorts), rangeSort.ptr), domainSorts.size, context)
+  final def mkTheorySort(symbol: Z3Symbol) : Z3Sort = new Z3Sort(Z3Wrapper.Z3_theory_mk_sort(context.ptr, this.ptr, symbol.ptr), context)
+  final def mkTheoryValue(symbol: Z3Symbol, sort: Z3Sort) : Z3AST = new Z3AST(Z3Wrapper.Z3_theory_mk_value(context.ptr, this.ptr, symbol.ptr, sort.ptr), context)
+  final def mkTheoryConstant(symbol: Z3Symbol, sort: Z3Sort) : Z3AST = new Z3AST(Z3Wrapper.Z3_theory_mk_constant(context.ptr, this.ptr, symbol.ptr, sort.ptr), context)
+  final def mkTheoryFuncDecl(symbol: Z3Symbol, domainSorts: Seq[Z3Sort], rangeSort: Z3Sort) : Z3FuncDecl = new Z3FuncDecl(Z3Wrapper.Z3_theory_mk_func_decl(context.ptr, this.ptr, symbol.ptr, domainSorts.size, toPtrArray(domainSorts), rangeSort.ptr), domainSorts.size, context)
 
   // These functions enable the communication with the DPLL+UF engine.
   final def getContext : Z3Context = context
@@ -165,21 +165,21 @@ abstract class Z3Theory(context: Z3Context, val name: String) {
    * following callbacks only: </code>newEq</code>, <code>newDiseq</code>,
    * <code>newAssignment</code>, <code>finalCheck</code>. It is unclear whether
    * this is a bug with Z3 or a feature. */
-  final def assertAxiom(axiom: Z3AST) : Unit = Z3Wrapper.theoryAssertAxiom(this.ptr, axiom.ptr)
+  final def assertAxiom(axiom: Z3AST) : Unit = Z3Wrapper.Z3_theory_assert_axiom(this.ptr, axiom.ptr)
 
   /** Indicates to Z3 that in the model being built by the theory, two elements are equal. */
-  final def assumeEq(lhs: Z3AST, rhs: Z3AST) : Unit = Z3Wrapper.theoryAssumeEq(this.ptr, lhs.ptr, rhs.ptr)
+  final def assumeEq(lhs: Z3AST, rhs: Z3AST) : Unit = Z3Wrapper.Z3_theory_assume_eq(this.ptr, lhs.ptr, rhs.ptr)
 
-  final def enableAxiomSimplification(flag: Boolean) : Unit = Z3Wrapper.theoryEnableAxiomSimplification(this.ptr, flag)
-  final def getEqClassRoot(ast: Z3AST) : Z3AST = new Z3AST(Z3Wrapper.theoryGetEqCRoot(this.ptr, ast.ptr), context)
-  final def getEqClassNext(ast: Z3AST) : Z3AST = new Z3AST(Z3Wrapper.theoryGetEqCNext(this.ptr, ast.ptr), context)
+  final def enableAxiomSimplification(flag: Boolean) : Unit = Z3Wrapper.Z3_theory_enable_axiom_simplification(this.ptr, flag)
+  final def getEqClassRoot(ast: Z3AST) : Z3AST = new Z3AST(Z3Wrapper.Z3_theory_get_eq_croot(this.ptr, ast.ptr), context)
+  final def getEqClassNext(ast: Z3AST) : Z3AST = new Z3AST(Z3Wrapper.Z3_theory_get_eq_cnext(this.ptr, ast.ptr), context)
 
   /** Returns an iterator over all elements of the equivalence class of a term. */
   final def getEqClassMembers(ast: Z3AST) : Iterator[Z3AST] = {
     val theory = this
     new Iterator[Z3AST] {
-      val root: Pointer = Z3Wrapper.theoryGetEqCRoot(theory.ptr, ast.ptr)
-      var nxt: Pointer = Z3Wrapper.theoryGetEqCNext(theory.ptr, root)
+      val root: Pointer = Z3Wrapper.Z3_theory_get_eq_croot(theory.ptr, ast.ptr)
+      var nxt: Pointer = Z3Wrapper.Z3_theory_get_eq_cnext(theory.ptr, root)
       var calledOnce = false
 
       override def hasNext : Boolean = (!calledOnce || nxt != root)
@@ -189,67 +189,67 @@ abstract class Z3Theory(context: Z3Context, val name: String) {
           new Z3AST(root, context)
         } else {
           val toReturn = new Z3AST(nxt, context)
-          nxt = Z3Wrapper.theoryGetEqCNext(theory.ptr, nxt)
+          nxt = Z3Wrapper.Z3_theory_get_eq_cnext(theory.ptr, nxt)
           toReturn
         }
       }
     }
   }
 
-  final def getNumParents(ast: Z3AST) : Int = Z3Wrapper.theoryGetNumParents(this.ptr, ast.ptr)
-  final def getParent(ast: Z3AST, i: Int) : Z3AST = new Z3AST(Z3Wrapper.theoryGetParent(this.ptr, ast.ptr, i), context)
+  final def getNumParents(ast: Z3AST) : Int = Z3Wrapper.Z3_theory_get_num_parents(this.ptr, ast.ptr)
+  final def getParent(ast: Z3AST, i: Int) : Z3AST = new Z3AST(Z3Wrapper.Z3_theory_get_parent(this.ptr, ast.ptr, i), context)
 
   /** Returns an iterator over all terms that have a given term as a subtree. */
   final def getParents(ast: Z3AST) : Iterator[Z3AST] = {
     val theory = this
     new Iterator[Z3AST] {
-      val total : Int = Z3Wrapper.theoryGetNumParents(theory.ptr, ast.ptr)
+      val total : Int = Z3Wrapper.Z3_theory_get_num_parents(theory.ptr, ast.ptr)
       var returned : Int = 0
       
       override def hasNext : Boolean = (returned < total)
       override def next() : Z3AST = {
-        val toReturn = new Z3AST(Z3Wrapper.theoryGetParent(theory.ptr, ast.ptr, returned), context)
+        val toReturn = new Z3AST(Z3Wrapper.Z3_theory_get_parent(theory.ptr, ast.ptr, returned), context)
         returned += 1
         toReturn
       }
     }
   }
 
-  final def isTheoryValue(v: Z3AST) : Boolean = Z3Wrapper.theoryIsValue(this.ptr, v.ptr)
-  final def isTheoryDecl(f: Z3FuncDecl) : Boolean = Z3Wrapper.theoryIsDecl(this.ptr, f.ptr)
+  final def isTheoryValue(v: Z3AST) : Boolean = Z3Wrapper.Z3_theory_is_value(this.ptr, v.ptr)
+  final def isTheoryDecl(f: Z3FuncDecl) : Boolean = Z3Wrapper.Z3_theory_is_decl(this.ptr, f.ptr)
 
-  final def getNumElems : Int = Z3Wrapper.theoryGetNumElems(this.ptr)
-  final def getElem(i: Int) : Z3AST = new Z3AST(Z3Wrapper.theoryGetElem(this.ptr, i), context)
+  final def getNumElems : Int = Z3Wrapper.Z3_theory_get_num_elems(this.ptr)
+  final def getElem(i: Int) : Z3AST = new Z3AST(Z3Wrapper.Z3_theory_get_elem(this.ptr, i), context)
 
   /** Returns an iterator over all theory elements in the context. */
   final def getElems : Iterator[Z3AST] = {
     val theory = this
     new Iterator[Z3AST] {
-      val total : Int = Z3Wrapper.theoryGetNumElems(theory.ptr)
+      val total : Int = Z3Wrapper.Z3_theory_get_num_elems(theory.ptr)
       var returned : Int = 0
       
       override def hasNext : Boolean = (returned < total)
       override def next() : Z3AST = {
-        val toReturn = new Z3AST(Z3Wrapper.theoryGetElem(theory.ptr, returned), context)
+        val toReturn = new Z3AST(Z3Wrapper.Z3_theory_get_elem(theory.ptr, returned), context)
         returned += 1
         toReturn
       }
     }
   }
 
-  final def getNumApps : Int = Z3Wrapper.theoryGetNumApps(this.ptr)
-  final def getApp(i: Int) : Z3AST = new Z3AST(Z3Wrapper.theoryGetApp(this.ptr, i), context)
+  final def getNumApps : Int = Z3Wrapper.Z3_theory_get_num_apps(this.ptr)
+  final def getApp(i: Int) : Z3AST = new Z3AST(Z3Wrapper.Z3_theory_get_app(this.ptr, i), context)
 
   /** Returns an iterator over all theory function applications in the context. */
   final def getApps : Iterator[Z3AST] = {
     val theory = this
     new Iterator[Z3AST] {
-      val total : Int = Z3Wrapper.theoryGetNumApps(theory.ptr)
+      val total : Int = Z3Wrapper.Z3_theory_get_num_apps(theory.ptr)
       var returned : Int = 0
       
       override def hasNext : Boolean = (returned < total)
       override def next() : Z3AST = {
-        val toReturn = new Z3AST(Z3Wrapper.theoryGetApp(theory.ptr, returned), context)
+        val toReturn = new Z3AST(Z3Wrapper.Z3_theory_get_app(theory.ptr, returned), context)
         returned += 1
         toReturn
       }

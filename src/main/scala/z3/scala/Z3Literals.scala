@@ -4,7 +4,7 @@ import jnr.ffi.Pointer
 
 sealed class Z3Literals private[z3](val ptr: Pointer, context: Z3Context) {
   def delete : Unit = {
-    Z3Wrapper.delLiterals(context.ptr, this.ptr)
+    Z3Wrapper.Z3_del_literals(context.ptr, this.ptr)
   }
 
   def getNumLiterals : Int = context.getNumLiterals(this) 

@@ -12,10 +12,10 @@ trait Z3Object extends Z3Pointer {
 
 trait Z3ASTLike extends Z3Object {
   final protected[z3] def incRef() {
-    Z3Wrapper.incRef(context.ptr, ptr)
+    Z3Wrapper.Z3_inc_ref(context.ptr, ptr)
   }
 
   final protected[z3] def decRef() {
-    Z3Wrapper.decRef(context.ptr, ptr)
+    Z3Wrapper.Z3_dec_ref(context.ptr, ptr)
   }
 }

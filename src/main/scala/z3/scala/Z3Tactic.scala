@@ -12,11 +12,11 @@ class Z3Tactic private[z3](val ptr : Pointer, val context : Z3Context) extends Z
   }
 
   def incRef() {
-    Z3Wrapper.tacticIncRef(context.ptr, this.ptr)
+    Z3Wrapper.Z3_tactic_inc_ref(context.ptr, this.ptr)
   }
 
   def decRef() {
-    Z3Wrapper.tacticDecRef(context.ptr, this.ptr)
+    Z3Wrapper.Z3_tactic_dec_ref(context.ptr, this.ptr)
   }
 
   locally {
