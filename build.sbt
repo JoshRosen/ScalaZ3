@@ -1,6 +1,6 @@
 name := "ScalaZ3"
 
-version := "2.1"
+version := "3.0-SNAPSHOT"
 
 organization := "ch.epfl.lara"
 
@@ -10,7 +10,7 @@ scalacOptions += "-unchecked"
 
 scalacOptions += "-feature"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.2"
 
 crossScalaVersions := Seq("2.10.4", "2.11.2")
 
